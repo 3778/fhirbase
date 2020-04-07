@@ -23,7 +23,7 @@ a_main-packr.go: $(GOPATH)/bin/packr
 	rm -rfv $(GOPATH)/src/golang.org/x/tools/go/loader/testdata; \
 	rm -rfv $(GOPATH)/src/golang.org/x/tools/cmd/fiximports/testdata; \
 	rm -rfv $(GOPATH)/src/golang.org/x/tools/internal/lsp/testdata; \
-	go clean -modcache; \
+	$(GO) clean -modcache; \
 	$(GOPATH)/bin/packr -z
 
 $(BASE):
@@ -49,12 +49,12 @@ fmt:
 
 .PHONY: clean
 clean:
-	go clean -modcache
+	$(GO) clean -modcache
 	rm -rf bin .gopath vendor *-packr.go
 
 .PHONY: tests
 test: fmt lint a_main-packr.go
-	go test $(ARGS)
+	$(GO) test $(ARGS)
 
 .PHONY: docker
 docker: Dockerfile bin/fhirbase-linux-amd64
