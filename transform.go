@@ -77,6 +77,11 @@ func transform(node interface{}, trNode map[string]interface{}, tr map[string]in
 				newref["display"] = v["display"].(string)
 			}
 
+			if v["identifier"] != nil {
+				newref["identifier"] = v["identifier"]
+			}
+
+
 			res = newref
 		}
 
