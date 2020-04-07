@@ -9,12 +9,15 @@ GODOC   = godoc
 GOFMT   = gofmt
 
 .PHONY: all
-all: a_main-packr.go lint fmt | $(BASE)
+all: godeps a_main-packr.go lint fmt | $(BASE)
 	$(GO) build \
 	-v \
 	-tags release \
 	-ldflags '-X "main.Version=$(VERSION)" -X "main.BuildDate=$(DATE)"' \
 	-o bin/$(PACKAGE)$(BINSUFFIX) *.go
+
+godeps:
+	$(GO) get
 
 a_main-packr.go: $(GOPATH)/bin/packr
 	rm -rfv $(GOPATH)/src/golang.org/x/tools/go/loader/testdata; \
@@ -22,7 +25,6 @@ a_main-packr.go: $(GOPATH)/bin/packr
 	rm -rfv $(GOPATH)/src/golang.org/x/tools/internal/lsp/testdata; \
 	go clean -modcache; \
 	$(GOPATH)/bin/packr -z
-
 
 $(BASE):
 	@mkdir -p $(dir $@)
