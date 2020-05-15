@@ -1,5 +1,6 @@
 PACKAGE  = fhirbase
 export GOPATH   = $(CURDIR)/.gopath
+export GOBIN    = $(GOPATH)/bin
 BASE     = $(GOPATH)/src/$(PACKAGE)
 DATE    ?= $(shell date +%FT%T%z)
 VERSION ?= $(shell (cat $(BASE)/.version 2> /dev/null) || (echo 'nightly-\c' && git rev-parse --short HEAD 2> /dev/null)  | tr -d "\n")
