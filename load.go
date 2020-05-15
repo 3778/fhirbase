@@ -661,6 +661,10 @@ type insertLoader struct {
 	fhirVersion string
 }
 
+type upInsertLoader struct {
+	fhirVersion string
+}
+
 func (l *copyLoader) Load(db *pgx.Conn, bndl bundle, cb loaderCb) error {
 	src := newCopyFromBundleSource(bndl, l.fhirVersion, cb)
 
@@ -672,6 +676,52 @@ func (l *copyLoader) Load(db *pgx.Conn, bndl bundle, cb loaderCb) error {
 		if err != nil {
 			return errors.Wrap(err, "cannot perform COPY command")
 		}
+	}
+
+	return nil
+}
+
+func (l *upInsertLoader) Load(db *pgx.Conn, bndl bundle, cb loaderCb) error {
+	batch := db.BeginBatch()
+	curResource := uint(0)
+	totalCount := uint(bndl.Count())
+	batchSize := uint(2000)
+	var err error
+
+	for err == nil {
+		startTime := time.Now()
+		var resource map[string]interface{}
+		resource, err = bndl.Next()
+
+		if err == nil {
+			transformedResource, err := doTransform(resource, l.fhirVersion)
+
+			if err != nil {
+				fmt.Printf("Error during FB transform: %v\n", err)
+			}
+
+			resourceType, _ := resource["resourceType"].(string)
+			batch.Queue("SELECT fhirbase_update($1)", []interface{}{transformedResource}, []pgtype.OID{pgtype.JSONBOID}, nil)
+
+			if curResource%batchSize == 0 || curResource == totalCount-1 {
+				batch.Send(context.Background(), nil)
+				batch.Close()
+
+				if curResource != totalCount-1 {
+					batch = db.BeginBatch()
+				} else {
+					batch = nil
+				}
+			}
+
+			curResource++
+			cb(resourceType, time.Since(startTime))
+		}
+	}
+
+	if batch != nil {
+		batch.Send(context.Background(), nil)
+		batch.Close()
 	}
 
 	return nil
@@ -845,12 +895,16 @@ func LoadCommand(c *cli.Context) error {
 		mode = "copy"
 	}
 
-	if mode != "copy" && mode != "insert" {
-		return fmt.Errorf("invalid value for --mode flag. Possible values are either 'copy' or 'insert'")
+	if mode != "copy" && mode != "insert" && mode != "upinsert" {
+		return fmt.Errorf("invalid value for --mode flag. Possible values are either 'copy','insert' or 'upinsert'")
 	}
 
 	if mode == "copy" {
 		ldr = &copyLoader{
+			fhirVersion: fhirVersion,
+		}
+	} else if mode == "upinsert" {
+		ldr = &upInsertLoader{
 			fhirVersion: fhirVersion,
 		}
 	} else {

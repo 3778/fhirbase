@@ -229,7 +229,7 @@ input.`,
 				cli.StringFlag{
 					Name:  "mode, m",
 					Value: "insert",
-					Usage: "Load mode to use, possible values are 'copy' and 'insert'",
+					Usage: "Load mode to use, possible values are 'copy','insert' or 'upinsert'",
 				},
 				cli.UintFlag{
 					Name:  "numdl",
