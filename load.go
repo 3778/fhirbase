@@ -685,7 +685,7 @@ func (l *upInsertLoader) Load(db *pgx.Conn, bndl bundle, cb loaderCb) error {
 	batch := db.BeginBatch()
 	curResource := uint(0)
 	totalCount := uint(bndl.Count())
-	batchSize := uint(2000)
+	batchSize := uint(200)
 	var err error
 
 	for err == nil {
