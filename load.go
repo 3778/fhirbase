@@ -701,7 +701,13 @@ func (l *upInsertLoader) Load(db *pgx.Conn, bndl bundle, cb loaderCb) error {
 			}
 
 			resourceType, _ := resource["resourceType"].(string)
-			batch.Queue("SELECT fhirbase_update($1)", []interface{}{transformedResource}, []pgtype.OID{pgtype.JSONBOID}, nil)
+			id, ok := resource["id"].(string)
+
+			if !ok || id == "" {
+				batch.Queue("SELECT fhirbase_create($1)", []interface{}{transformedResource}, []pgtype.OID{pgtype.JSONBOID}, nil)
+			} else {
+				batch.Queue("SELECT fhirbase_update($1)", []interface{}{transformedResource}, []pgtype.OID{pgtype.JSONBOID}, nil)
+			}
 
 			if curResource%batchSize == 0 || curResource == totalCount-1 {
 				batch.Send(context.Background(), nil)
